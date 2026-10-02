@@ -13,4 +13,11 @@ export type BitrixTask = {
   title: string;
   description: string;
   status: string;
+  groupId: number | null;
 };
+
+export type BitrixTaskListItem = Pick<BitrixTask, 'id' | 'title' | 'status'> & {
+  deadline: string | null;
+};
+
+export type BitrixWorkgroup = { id: number; title: string };
