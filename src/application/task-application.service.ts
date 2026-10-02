@@ -16,7 +16,8 @@ export class TaskApplicationService {
 
   async getProjectTasks(projectAlias: string): Promise<{ project: { alias: string; bitrixGroupId: number; title: string | null }; tasks: BitrixTaskListItem[] }> {
     const project = await this.projects.getRequired(projectAlias);
-    const tasks = await this.clients.getClient(DEFAULT_USER_ID).getOpenGroupTasks(project.bitrixGroupId);
+    const client = this.clients.getClient(DEFAULT_USER_ID);
+    const tasks = await client.getOpenGroupTasks(project.bitrixGroupId, await client.getCurrentUserId());
     return { project: { alias: project.alias, bitrixGroupId: project.bitrixGroupId, title: project.bitrixTitle }, tasks };
   }
 

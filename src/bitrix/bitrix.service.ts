@@ -78,13 +78,19 @@ export class BitrixService {
     };
   }
 
-  async getOpenGroupTasks(groupId: number): Promise<BitrixTaskListItem[]> {
+  async getCurrentUserId(): Promise<number> {
+    const body = await this.call<{ result?: { ID?: string | number } }>('profile', {});
+    if (!body.result?.ID) throw new BadGatewayException('Bitrix24 did not return the webhook user.');
+    return Number(body.result.ID);
+  }
+
+  async getOpenGroupTasks(groupId: number, responsibleId: number): Promise<BitrixTaskListItem[]> {
     const body = await this.call<{ result?: BitrixListPayload }>('tasks.task.list', {
       order: { DEADLINE: 'asc' },
-      filter: { GROUP_ID: groupId, '!REAL_STATUS': [5, 6] },
+      filter: { GROUP_ID: groupId, RESPONSIBLE_ID: responsibleId, '!REAL_STATUS': 5 },
       select: ['ID', 'TITLE', 'STATUS', 'DEADLINE'],
     });
-    return (body.result?.tasks ?? []).flatMap((task) => task.id && task.title ? [{
+    return (body.result?.tasks ?? []).filter((task) => task.status !== '6').flatMap((task) => task.id && task.title ? [{
       id: Number(task.id), title: task.title, status: task.status ?? '', deadline: task.deadline ?? null,
     }] : []);
   }
