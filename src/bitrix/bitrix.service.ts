@@ -90,9 +90,9 @@ export class BitrixService {
   }
 
   async getWorkgroup(groupId: number): Promise<BitrixWorkgroup> {
-    const body = await this.call<{ result?: BitrixWorkgroupPayload }>('socialnetwork.api.workgroup.get', { params: { groupId } });
-    const group = body.result;
-    if (!group?.ID || !group.NAME) throw new NotFoundException(`Bitrix24 project ${groupId} was not found.`);
+    const body = await this.call<{ result?: BitrixWorkgroupPayload[] }>('sonet_group.get', { GROUP_ID: groupId });
+    const group = body.result?.[0];
+    if (!group?.ID || !group.NAME) throw new NotFoundException(`Bitrix24 project ${groupId} was not found or is unavailable to the webhook user.`);
     return { id: group.ID, title: group.NAME };
   }
 
