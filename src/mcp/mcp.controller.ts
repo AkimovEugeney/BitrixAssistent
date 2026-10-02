@@ -58,7 +58,19 @@ export class McpController {
   }
 
   private createServer(): McpServer {
-    const server = new McpServer({ name: 'bitrix-assistant', version: '0.1.0' });
+    const server = new McpServer(
+      { name: 'bitrix-assistant', version: '0.2.0' },
+      {
+        instructions: [
+          'Use this server for Bitrix24 task workflows.',
+          'When a user mentions a project name or alias and asks about its tasks, first call get_project_aliases if the alias is not already known, then call get_project_tasks.',
+          'Use bind_project_alias only when the user explicitly provides both an alias and a Bitrix group ID.',
+          'When the user explicitly selects a task by ID or list position, call set_current_task before follow-up work.',
+          'Before recording time, call get_current_context if needed, show the task, seconds, and description, then call add_elapsed_time only after explicit confirmation.',
+          'Never create tasks. Never guess a project alias or task for time tracking.',
+        ].join(' '),
+      },
+    );
     // The SDK's inferred Zod type is too deep for TypeScript 5.9 here.
     // Keep the public tool boundary explicit while preserving runtime validation.
     const registerTool = server.registerTool.bind(server) as unknown as RegisterTool;
@@ -77,12 +89,12 @@ export class McpController {
     );
 
     registerTool('get_project_tasks', {
-      title: 'Get project tasks', description: 'Use when the user asks for active tasks in a specific project alias.',
+      title: 'Get assigned active project tasks', description: 'Use when the user asks for their tasks in a named Bitrix project or known alias. If the alias is unknown, call get_project_aliases first; do not ask the user to provide task IDs.',
       inputSchema: { projectAlias: z.string().trim().min(1) },
     }, async (input) => this.result(() => this.tasks.getProjectTasks(this.string(input, 'projectAlias'))));
 
     registerTool('get_current_context', {
-      title: 'Get current task context', description: 'Use before actions that depend on the currently selected task.', inputSchema: {},
+      title: 'Get current task context', description: 'Use before actions that depend on the currently selected task, especially before recording time.', inputSchema: {},
     }, async () => this.result(() => this.tasks.getContext()));
 
     registerTool('set_current_task', {
@@ -99,7 +111,7 @@ export class McpController {
     }, async (input) => this.result(() => this.tasks.addElapsedTime(this.optionalNumber(input, 'taskId'), this.number(input, 'seconds'), this.string(input, 'description'))));
 
     registerTool('get_project_aliases', {
-      title: 'Get project aliases', description: 'Lists configured project aliases.', inputSchema: {},
+      title: 'Find configured project aliases', description: 'Call first when the user asks about a project by name or alias and the mapping is not known in the conversation. Returns aliases that can be passed to get_project_tasks.', inputSchema: {},
     }, async () => this.result(() => this.tasks.getProjectAliases()));
 
     registerTool('bind_project_alias', {
