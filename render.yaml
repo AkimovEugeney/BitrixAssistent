@@ -1,0 +1,11 @@
+services:
+  - type: web
+    runtime: node
+    name: bitrix-assistant
+    plan: free
+    buildCommand: pnpm install --frozen-lockfile && pnpm run build
+    startCommand: pnpm start
+    healthCheckPath: /
+    envVars:
+      - key: BITRIX_WEBHOOK_URL
+        sync: false
